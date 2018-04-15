@@ -4,11 +4,25 @@
 \name{hyderogen}
 \alias{hyderogen}
 \alias{hyderogen-package}
-\title{hyderogen: What the Package Does (one line, title case)}
+\title{Build jekyll sites}
 \description{
-What the package does (one paragraph).
+hyderogen provides a toolset for quickly building Jekyll projects from your
+package's roxygen. These tools focus on creating detailed front matter and
+plain templates. You can then further customize these templates. When you
+update your roxygen you can rebuild your Jekyll front matter, while leaving
+the templates untouched.
+
+This package is a work in progress. If you try it out please do not be shy
+about reporting bugs or less-than-ideal results. All feedback is welcome at
+\href{https://github.com/nteetor/hyderogen}{nteetor/hyderogen/issues}.
+}
+\seealso{
+For more on Jekyll check out \url{https://jekyllrb.com/docs/home/}.
+
+For more on using Jekyll and Github pages check out,
+\url{https://jekyllrb.com/docs/github-pages/}.
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com}
+\strong{Maintainer}: Nathan Teetor \email{nathanteetor@gmail.com}
 
 }
