@@ -1,5 +1,8 @@
 # hyderogen
 
+![stability-wip](https://img.shields.io/badge/stability-work_in_progress-blue.svg)
+
+
 Turn your existing roxygen documentation into a jekyll site.
 
 ## How it works
