@@ -15,9 +15,9 @@ make_documents <- function(blocks) {
 }
 
 as_document <- function(block) {
-  nms <- names(block)
+  tags <- names(block)
   attributes(block) <- NULL
-  names(block) <- nms
+  names(block) <- tags
 
   classes <- "document"
 
@@ -29,7 +29,7 @@ as_document <- function(block) {
 
   structure(
     list(
-      name = unique(flatten_chr(block$name)),
+      name = unique(unlist(block$name)),
       roxygen = map(block, unlist)
     ),
     class = classes

@@ -2,5 +2,6 @@
 
 export(jekyll)
 import(fs)
+import(glue)
 import(purrr)
 import(yaml)

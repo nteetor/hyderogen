@@ -14,4 +14,7 @@ Imports:
     roxygen2,
     purrr,
     fs,
+    glue,
+    desc,
     yaml
+

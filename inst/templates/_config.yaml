@@ -1,0 +1,13 @@
+# Welcome to Jekyll!
+
+# Site variables
+title: {: title || "" :}
+email: {: email || "" :}
+description: {: description || "" :}
+baseurl: /{: pkgname :} # the subpath of your site, e.g. /blog
+url: {: username > https://%s.github.io/ || "" :}
+
+# Build settings
+collections_dir: collections
+markdown: kramdown
+theme: minima

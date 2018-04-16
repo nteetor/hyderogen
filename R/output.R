@@ -1,7 +1,8 @@
 write_project <- function(proj, dir = "docs/") {
-  dir_create(dir)
 
-  walk(proj$collections, write_collection, dir = dir)
+  colls_dir <- path(dir, "collections")
+  dir_create(colls_dir)
+  walk(proj$collections, write_collection, dir = colls_dir)
 
   invisible(proj)
 }
@@ -23,6 +24,10 @@ write_collection <- function(coll, dir) {
   }
 
   coll_path <- path(dir, paste0("_", coll$name))
+
+  if (dir_exists(coll_path)) {
+    dir_delete(coll_path)
+  }
 
   dir_create(coll_path)
 

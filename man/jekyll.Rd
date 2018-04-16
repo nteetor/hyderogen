@@ -17,6 +17,12 @@ built, defaults to \code{"docs"}.}
 The \code{jekyll} function builds a jekyll site from your
 package's roxygen.
 }
+\details{
+Collections are currently overwritten. However, if a family's name is
+changed then the old, corresponding collection will not be deleted. This is
+to prevent custom collections from accidentally being removed. This behaviour
+is subject to change.
+}
 \examples{
 \dontrun{
 

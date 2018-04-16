@@ -9,6 +9,13 @@
 #' @param dir A folder path, relative to `pkg`, where the jekyll site will be
 #'   built, defaults to `"docs"`.
 #'
+#' @details
+#'
+#' Collections are currently overwritten. However, if a family's name is
+#' changed then the old, corresponding collection will not be deleted. This is
+#' to prevent custom collections from accidentally being removed. This behaviour
+#' is subject to change.
+#'
 #' @export
 #' @examples
 #' \dontrun{
@@ -27,13 +34,16 @@ jekyll <- function(pkg = ".", dir = "docs") {
     )
   }
 
+  base_dir <- path(pkg, dir)
+
+  dir_create(base_dir)
+
   proj <- parse_files(r_dir)
 
-  if (dir == stdout()) {
-    cat(format_project(dir), sep = "\n")
-  } else {
-    write_project(proj, dir = path(pkg, dir))
-  }
+  copy_structure(desc::desc(pkg), dir = base_dir)
+
+  # "project" might as well be "package" at this point
+  write_project(proj, dir = base_dir)
 
   invisible()
 }
