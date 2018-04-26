@@ -40,7 +40,9 @@ jekyll <- function(pkg = ".", dir = "docs") {
 
   proj <- parse_files(r_dir)
 
-  copy_structure(desc::desc(pkg), dir = base_dir)
+  copy_structure(base_dir)
+
+  copy_config(base_dir, desc::desc(pkg), proj$collections)
 
   # "project" might as well be "package" at this point
   write_project(proj, dir = base_dir)

@@ -6,8 +6,14 @@
 )
 
 .layouts <- list(
-  default = "default.html",
+  home = "home.html",
   page = "page.html"
+)
+
+.includes <- list(
+  header = "header.html",
+  `page-sidebar` = "page-sidebar.html",
+  `page-navbar` = "page-navbar.html"
 )
 
 get_template <- function(name) {
@@ -24,6 +30,14 @@ get_layout <- function(name) {
   }
 
   system.file("layouts", .layouts[[name]], package = "hyderogen")
+}
+
+get_include <- function(name) {
+  if (is.null(.includes[[name]])) {
+    stop('`get_include()`, unknown include "', name, '"', call. = FALSE)
+  }
+
+  system.file("includes", .includes[[name]], package = "hyderogen")
 }
 
 fill_template <- function(file, data = list()) {
@@ -53,19 +67,54 @@ copy_template <- function(name, dir, data = list()) {
   invisible()
 }
 
-copy_layout <- function(name, dir, data = list()) {
-  stop("`copy_layout()` is not implemented")
+copy_layout <- function(name, dir) {
+  layout <- get_layout(name)
+  file_copy(layout, path(dir, path_file(layout)), overwrite = TRUE)
 }
 
-copy_structure <- function(meta, dir) {
+copy_include <- function(name, dir) {
+  include <- get_include(name)
+  file_copy(include, path(dir, path_file(include)), overwrite = TRUE)
+}
 
-  copy_template("config", dir, list(
-    title = meta$get("Title"),
-    description = meta$get("Description")
-  ))
+copy_structure <- function(dir) {
 
   copy_template("index", dir)
   copy_template("404", dir)
 
+  dir_create(path(dir, "_includes"))
+  copy_include("header", path(dir, "_includes"))
+  copy_include("page-sidebar", path(dir, "_includes"))
+  copy_include("page-navbar", path(dir, "_includes"))
+
+  dir_create(path(dir, "_layouts"))
+  copy_layout("page", path(dir, "_layouts"))
+  copy_layout("home", path(dir, "_layouts"))
+
   invisible()
+}
+
+copy_config <- function(dir, pkg = desc::desc(), collections = NULL) {
+  if (length(collections)) {
+    coll_names <- map_chr(collections, "name")
+
+    colls <- map(collections, ~ {
+      list(
+        output = TRUE,
+        permalink = glue("/docs/{ pkg$get('Version') }/:collection/:path")
+      )
+    })
+
+    names(colls) <- coll_names
+
+    collections <- as.yaml(list(collections = colls))
+  }
+
+  copy_template("config", dir, list(
+    title = pkg$get("Title"),
+    description = pkg$get("Description"),
+    package = pkg$get("Package"),
+    version = pkg$get("Version"),
+    collections = collections
+  ))
 }

@@ -1,4 +1,5 @@
 ---
+layout: page
 title: 'Null'
 description:
   - A `NULL` block.

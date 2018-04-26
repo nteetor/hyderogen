@@ -1,14 +1,24 @@
 # Welcome to Jekyll!
 
 # Site variables
-title: "Build jekyll sites from roxygen"
+title: Build jekyll sites from roxygen
 email: ""
-description: "Tools to keep building and maintaining jekyll sites for your work
-    plain and simple."
-baseurl: "/" # the subpath of your site, e.g. /blog
+description: Tools to keep building and maintaining jekyll sites for your work
+    plain and simple.
+baseurl: / # the subpath of your site, e.g. /blog
 url: ""
 
+# Package variables
+package: hyderogen
+version: 0.0.1
+
 # Build settings
-collections: collections
+collections_dir: collections
 markdown: kramdown
-theme: minima 
+theme: minima
+
+collections:
+  my_collection:
+    output: yes
+    permalink: /docs/0.0.1/:collection/:path
+ 

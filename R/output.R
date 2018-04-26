@@ -55,7 +55,14 @@ write_item <- function(item, dir) {
 }
 
 format_item <- function(item) {
-  as.yaml(item$roxygen, indent.mapping.sequence = TRUE)
+  jekyll_matter <- list(
+    layout = item$layout
+  )
+
+  as.yaml(
+    c(jekyll_matter, item$roxygen),
+    indent.mapping.sequence = TRUE
+  )
 }
 
 write_front_matter <- function(yaml, file, preserve = FALSE, newline = "\n") {
