@@ -6,9 +6,7 @@ description:
   - Another description for custom page.
 family: my_collection
 export: ''
-name:
-  - custom_page
-  - custom_page
+name: custom_page
 
 ---
 

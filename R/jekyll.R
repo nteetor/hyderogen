@@ -25,27 +25,12 @@
 #' }
 #'
 jekyll <- function(pkg = ".", dir = "docs") {
-  r_dir <- path(pkg, "R")
-
-  if (!dir_exists(r_dir)) {
-    stop(
-      "`jekyll()`, no R/ directory found",
-      call. = FALSE
-    )
-  }
-
   base_dir <- path(pkg, dir)
-
   dir_create(base_dir)
 
-  proj <- parse_files(r_dir)
+  proj <- make_project(pkg)
 
-  copy_structure(base_dir)
-
-  copy_config(base_dir, desc::desc(pkg), proj$collections)
-
-  # "project" might as well be "package" at this point
-  write_project(proj, dir = base_dir)
+  write_project(proj, base_dir)
 
   invisible()
 }

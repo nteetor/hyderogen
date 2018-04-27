@@ -1,39 +1,71 @@
-write_project <- function(proj, dir = "docs/") {
-
-  colls_dir <- path(dir, "collections")
-  dir_create(colls_dir)
-  walk(proj$collections, write_collection, dir = colls_dir)
+write_project <- function(proj, dir) {
+  write_layouts(proj, dir)
+  write_includes(proj, dir)
+  write_templates(proj, dir)
+  write_collections(proj, dir)
 
   invisible(proj)
+}
+
+write_templates <- function(proj, dir) {
+  dat <- list(
+    package = proj$package$name,
+    version = proj$package$version,
+    title = proj$package$title,
+    description = proj$package$description,
+    username = proj$username,
+    collections = as.yaml(list(
+      collections = set_names(
+        map(proj$collections, ~ list(output = .$output, permalink = .$permalink)),
+        map(proj$collections, "name")
+      )
+    ))
+  )
+
+  for (t in proj$templates) {
+    copy_template(t, dir, data = dat)
+  }
+}
+
+write_layouts <- function(proj, dir) {
+  l_dir <- path(dir, "_layouts")
+  dir_create(l_dir)
+
+  for (l in proj$layouts) {
+    copy_layout(l, l_dir)
+  }
+}
+
+write_includes <- function(proj, dir) {
+  i_dir <- path(dir, "_includes")
+  dir_create(i_dir)
+
+  for (i in proj$includes) {
+    copy_include(i, i_dir)
+  }
 }
 
 format_project <- function(proj) {
   map(proj$collections, format_collection)
 }
 
-write_collection <- function(coll, dir) {
-  if (!dir_exists(dir)) {
-    stop("`write_collection()`, `dir` does not exist", call. = FALSE)
+write_collections <- function(proj, dir) {
+  c_dir <- path(dir, "collections")
+  dir_create(c_dir)
+
+  for (c in proj$collections) {
+    c_path <- path(c_dir, paste0("_", c$name))
+
+    if (dir_exists(c_path)) {
+      dir_delete(c_path)
+    }
+
+    dir_create(c_path)
+
+    for (i in c$items) {
+      write_item(i, c_path)
+    }
   }
-
-  if (!length(coll$name)) {
-    stop(
-      "`write_collection()`, collection is missing a name",
-      call. = FALSE
-    )
-  }
-
-  coll_path <- path(dir, paste0("_", coll$name))
-
-  if (dir_exists(coll_path)) {
-    dir_delete(coll_path)
-  }
-
-  dir_create(coll_path)
-
-  walk(coll$items, write_item, dir = coll_path)
-
-  invisible(coll)
 }
 
 format_collection <- function(coll) {
@@ -48,8 +80,7 @@ write_item <- function(item, dir) {
     )
   }
 
-  item_path <- path(dir, item$name)
-  path_ext(item_path) <- "md"
+  item_path <- path_ext_set(path(dir, item$name), "md")
 
   write_front_matter(format_item(item), item_path)
 }

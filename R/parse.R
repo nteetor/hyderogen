@@ -1,24 +1,49 @@
-parse_files <- function(dir = NULL, files = NULL) {
-  if (!is.null(dir) && !dir_exists(dir)) {
-    stop("`dir` is specified, but path does exist")
+make_project <- function(dir) {
+  if (!dir_exists(dir)) {
+    stop(
+      "`make_project()`, `dir` does not exist",
+      call. = FALSE
+    )
   }
 
-  files <- unique(c(dir_ls(dir), files))
+  r_dir <- path(dir, "R")
 
-  blocks <- flatten(lapply(files, parse_file))
+  if (!dir_exists(r_dir)) {
+    stop(
+      "`make_project()`, no R/ directory found",
+      call. = FALSE
+    )
+  }
+
+  blocks <- flatten(map(dir_ls(r_dir), parse_file))
   blocks <- map(blocks, set_block_name)
   blocks <- clean_blocks(blocks)
 
+  pkg <- desc::desc(dir)
   docs <- make_documents(blocks)
-
   colls <- make_collections(docs)
+
+  matter <- list(
+    output = TRUE,
+    permalink = glue("/docs/{ pkg$get('Version') }/:collection/:path")
+  )
+  colls <- map(colls, list_modify, !!!matter)
 
   structure(
     list(
+      package = list(
+        name = pkg$get("Package"),
+        version = pkg$get("Version"),
+        title = pkg$get("Title"),
+        description = gsub("[\\n\\s]+", " ", pkg$get("Description"), perl = TRUE)
+      ),
+      username = system("git config user.name", intern = TRUE),
       collections = colls,
-      pages = NULL
+      templates = names(.templates),
+      includes = names(.includes),
+      layouts = names(.layouts)
     ),
-    class = "jekyll"
+    class = c("jekyll", "list")
   )
 }
 
@@ -27,14 +52,7 @@ parse_file <- function(file) {
 }
 
 set_block_name <- function(block) {
-  nm <- get_block_name(block)
-  block$rdname <- NULL
-  block$name <- nm
-  block
-}
-
-get_block_name <- function(block) {
-  if (!is.null(block$rdname)) {
+  nm <- if (!is.null(block$rdname)) {
     block$rdname
   } else if (!is.null(block$name)) {
     block$name
@@ -43,6 +61,11 @@ get_block_name <- function(block) {
   } else {
     NULL
   }
+
+  block$rdname <- NULL
+  block$name <- nm
+
+  block
 }
 
 # drop blocks without names and join blocks with the same name
@@ -53,7 +76,9 @@ clean_blocks <- function(blocks) {
     return(blocks)
   }
 
-  map(unique(all_names), join_blocks, blocks)
+  joined <- map(unique(all_names), join_blocks, blocks)
+
+  map(joined, ~ update_list(., name = unique(unlist(.$name))))
 }
 
 join_blocks <- function(name, blocks) {

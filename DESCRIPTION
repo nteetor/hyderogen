@@ -1,7 +1,7 @@
 Package: hyderogen
 Version: 0.0.1
 Title: Build jekyll sites from roxygen
-Description: Tools to keep building and maintaining jekyll sites for your work
+Description: Tools to keep building and maintaining jekyll sites for your work 
     plain and simple.
 Authors@R: person("Nathan", "Teetor", , "nathanteetor@gmail.com", c("aut", "cre"))
 License: MIT

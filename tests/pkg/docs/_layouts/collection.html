@@ -1,0 +1,16 @@
+---
+---
+
+{{ site.{: collection :}.first }}
+
+<ul>
+  {% for item in site.{: collection :} %}
+    {% if forloop.first == true %}
+
+    {% else %}
+      <li>
+        {{ item.title }}
+      </li>
+    {% endif %}
+  {% endfor %}
+</ul>

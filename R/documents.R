@@ -29,7 +29,7 @@ as_document <- function(block) {
 
   structure(
     list(
-      name = unique(unlist(block$name)),
+      name = block$name,
       layout = "page",
       roxygen = map(block, unlist)
     ),
