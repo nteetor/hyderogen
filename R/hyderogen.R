@@ -19,7 +19,7 @@
 #' For more on using Jekyll and Github pages check out,
 #' \url{https://jekyllrb.com/docs/github-pages/}.
 #'
-#' @import purrr fs glue yaml
+#' @import purrr fs glue yaml roxygen2 withr
 #'
 #' @name hyderogen
 "_PACKAGE"

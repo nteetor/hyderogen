@@ -11,3 +11,11 @@ get_front_matter <- function(file) {
 
   paste0(lines[indeces], collapse = "\n")
 }
+
+cat0 <- function(..., sep = "") {
+  cat(..., sep = sep)
+}
+
+slugify <- function(x) {
+  tolower(gsub("([A-Z])", "-\\1", x, perl = TRUE))
+}

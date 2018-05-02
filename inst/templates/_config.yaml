@@ -1,19 +1,31 @@
 # Welcome to Jekyll!
 
-# Site variables
-title: {: title || "" :}
-email: {: email || "" :}
-description: {: description || "" :}
-baseurl: /{: pkgname :} # the subpath of your site, e.g. /blog
-url: {: username > https://%s.github.io/ || "" :}
+# Site variables -------
+title: { desc::desc_get("Title") }
+email: { system("git config user.email", intern = TRUE) }
+description: { desc::desc_get("Description") }
+baseurl: /{ desc::desc_get("Package") }
+url: https://{ system('git config user.name', intern = TRUE) }.github.io/
 
-# Package variables
-package: {: package :}
-version: {: version :}
+# Package variables ----
+package:
+  name: { desc::desc_get("Package") }
+  version: { desc::desc_get("Version") }
 
-# Build settings
+# Build settings -------
 collections_dir: collections
 markdown: kramdown
-theme: minima
+plugins:
+  - jekyll-redirect-from
 
-{: collections :}
+# Collections ----------
+{ collections }
+
+# Defaults -------------
+{ defaults }
+
+# Excluded files -------
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md
