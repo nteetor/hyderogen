@@ -8,10 +8,20 @@ Turn your existing roxygen documentation into a jekyll site.
 ## How it works
 
 - [x] `@family`s are converted into collections
-- [x] blocks without a `@family` tag are converted into pages
-- [ ] generate default jekyll files and folder structure
-- [ ] generate default templates for collections
-- [ ] collect extra meta data for front matter
+- [ ] bundle together docs with the same `@name`/`@rdname`
+- [x] docs without a `@family` are added to the `misc` collection
+- [x] generates default jekyll folder structure
+- [x] applies bootstrap-based stylings
+- [x] the majority of the site lives at `<url>/<pkg name>/docs/<pkg version>/`
+
+```R
+# remotes::install_github("nteetor/hyderogen")
+
+library(hyderogen)
+jekyll("<path to pkg>")
+
+browseURL("http://127.0.0.1:4000/<pkg name>/docs/<pkg version>/")
+```
 
 ## Why?
 
