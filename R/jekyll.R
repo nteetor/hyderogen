@@ -88,22 +88,19 @@ jekyll <- function(pkg = ".", dir = "docs") {
     message("Writing layouts")
     walk(get_layouts(), ~ write_out(layout(.)))
 
-    message("Writing sass")
+    message("Writing scss")
     dir_create("assets/css", recursive = TRUE)
     dir_create("_sass")
     cat0(
       "---",
       "---",
+      "",
       map_chr(get_sass(), ~ glue("@import '{ path_ext_remove(path_file(.)) }';")),
       sep = "\n",
       file = path("assets", "css", "main", ext = "scss")
     )
     walk(get_sass(), ~ file_copy(., path("_sass", path_file(.))))
   })
-
-  # proj <- make_project(pkg)
-  #
-  # write_project(proj, base_dir)
 
   invisible()
 }
