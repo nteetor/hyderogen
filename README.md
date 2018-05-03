@@ -18,6 +18,9 @@ Turn your existing roxygen documentation into a jekyll site.
 # remotes::install_github("nteetor/hyderogen")
 
 library(hyderogen)
+
+# WARNING, in it's current state this function will erase any existing files
+# in "<path to pkg>/docs"
 jekyll("<path to pkg>")
 
 browseURL("http://127.0.0.1:4000/<pkg name>/docs/<pkg version>/")
