@@ -3,7 +3,7 @@ write_out <- function(x, ...) {
 }
 
 write_out.page <- function(x, ...) {
-  if (is.null(attr(x, "path"))) {
+  if (!length(attr(x, "path"))) {
     # message("skipping ", x$roxygen$filename)
     return(invisible())
   }
@@ -16,7 +16,7 @@ write_out.page <- function(x, ...) {
   tryCatch(
     cat(content, file = dest, sep = ""),
     error = function(e) {
-      message("failed to create ", dest)
+      message("failed to create page ", dest)
     }
   )
 

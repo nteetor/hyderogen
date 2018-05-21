@@ -8,7 +8,14 @@ as_page.roxy_block <- function(x, ...) {
 
   sections <- set_names(
     compact(imap(x, ~ {
-      if (.y == "section") strsplit(.x, "\n\n", fixed = TRUE)[[1]]
+      if (.y == "section") {
+        split <- strsplit(.x, "\n\n", fixed = TRUE)[[1]]
+
+        list(
+          title = sub("[:]$", "", split[1]),
+          content = paste0(split[-1], collapse = "\n")
+        )
+      }
     })),
     NULL
   )
@@ -17,8 +24,8 @@ as_page.roxy_block <- function(x, ...) {
     gsub("^\n+", "", strsplit(x$examples, "\n{3,}", perl = TRUE)[[1]])
   }
 
-  blk_call <- attr(x, "call", exact = TRUE)
-  blk_name <- x$name %||% as.character(blk_call[[2]])
+  blk_call <- attr(x, "call", exact = TRUE) %||% x$name
+  blk_name <- x$name %||% as.character(if (length(blk_call) > 1) blk_call[[2]] else blk_call)
   blk_rdname <- x$rdname
   blk_family <- x$family
 

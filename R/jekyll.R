@@ -61,6 +61,7 @@ jekyll <- function(pkg = ".", dir = "docs") {
   defaults <- as.yaml(list(defaults = map(families, function(f) list(
     scope = list(path = "", type = f),
     values = list(
+      default_page = glue("/docs/{ desc::desc_get('Version', file = pkg) }/{ f }/{ slugify(children[[f]][[1]]) }"),
       sections = map(children[[f]], ~ list(
         name = .,
         slug = slugify(.)
