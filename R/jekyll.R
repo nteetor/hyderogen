@@ -96,7 +96,7 @@ jekyll <- function(pkg = ".", dir = "docs") {
       "---",
       "---",
       "",
-      map_chr(get_sass(), ~ glue("@import '{ path_ext_remove(path_file(.)) }';")),
+      map_chr(get_sass(), ~ glue("@import '{ sub('_', '', path_ext_remove(path_file(.)), fixed = TRUE) }';")),
       sep = "\n",
       file = path("assets", "css", "main", ext = "scss")
     )
