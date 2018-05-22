@@ -11,6 +11,7 @@ url: https://{ system('git config user.name', intern = TRUE) }.github.io/
 package:
   name: { desc::desc_get("Package") }
   version: { desc::desc_get("Version") }
+  url: { desc::desc_get("URL") }
 
 # Build settings -------
 collections_dir: collections
