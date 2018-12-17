@@ -2,13 +2,7 @@ as_yaml <- function(x, ...) {
   UseMethod("as_yaml")
 }
 
-as_yaml.page <- function(x, ...) {
-  yams <- yaml::as.yaml(x, indent = 2)
-  class(yams) <- c("yaml", class(yams))
-  yams
+as_yaml.roxy_block <- function(x, ...) {
+  yaml::as.yaml(x)
 }
 
-print.yaml <- function(x, ...) {
-  cat(x)
-  invisible(x)
-}

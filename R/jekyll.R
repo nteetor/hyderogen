@@ -1,107 +1,107 @@
-#' Build a jekyll site
+#' @importFrom fs path path_package dir_exists dir_delete dir_create dir_ls
+#'   dir_copy file_create file_exists file_copy file_move
+#' @importFrom glue glue glue_collapse double_quote
+#' @importFrom purrr walk %||%
+NULL
+
+#' Jekyll folder structure
 #'
-#' The `jekyll` function builds a jekyll site from your
-#' package's roxygen.
+#' Create a jekyll site structure from a package's roxygen. Optionally, a
+#' site may be built, too. Building your site requires
+#' [jekyll](https://jekyllrb.com/docs/installation/) to be installed and
+#' available on your system.
 #'
-#' @param pkg A character string specifying a file path to an R package,
-#'   defaults to `"."`, the current directory.
+#' @param path A file path specifying the folder of a package, defaults to
+#'   `"."`.
 #'
-#' @param dir A folder path, relative to `pkg`, where the jekyll site will be
-#'   built, defaults to `"docs"`.
+#' @param dir A file path, relative to `path`, specifying the destination of the
+#'   jekyll folders and files, defaults to `"docs/"`.
 #'
-#' @details
-#'
-#' Collections are currently overwritten. However, if a family's name is
-#' changed then the old, corresponding collection will not be deleted. This is
-#' to prevent custom collections from accidentally being removed. This behaviour
-#' is subject to change.
+#' @param build One of `TRUE` or `FALSE` specifying if the jekyll site is built
+#'   after creating the folder structure, defaults to `FALSE`.
 #'
 #' @export
-#' @examples
-#' \dontrun{
-#'
-#' jekyll("~/git/mypkg")
-#'
-#' }
-#'
-jekyll <- function(pkg = ".", dir = "docs") {
-  base_dir <- path(pkg, dir)
-  r_dir <- path(pkg, "R")
-
-  blocks <- suppressMessages(
-    roxygen2::parse_package(pkg, registry = tag_defaults())
-  )
-  pages <- map(blocks, as_page)
-
-  families <- unique(flatten_chr(map(pages, c("roxygen", "family"))))
-
-  firsts <- map_int(families, function(f) detect_index(pages, ~ .$roxygen$family == f))
-
-  pages[firsts] <- map(pages[firsts], ~ {
-    .$redirect_from <- glue("/docs/{ desc::desc_get('Version', file = pkg) }/{ .$roxygen$family }/")
-    .
-  })
-
-  collections <- as.yaml(list(collections = set_names(
-    map(families, ~ list(
-      output = TRUE,
-      permalink = glue("/docs/{ desc::desc_get('Version', file = pkg) }/:collection/:path")
-    )),
-    families
-  )))
-
-  children <- set_names(
-    map(families, ~ unique(map_chr(
-      keep(pages, function(p) identical(p$roxygen$family, .)),
-      page_name
-    ))),
-    families
-  )
-
-  defaults <- as.yaml(list(defaults = map(families, function(f) list(
-    scope = list(path = "", type = f),
-    values = list(
-      default_page = glue("/docs/{ desc::desc_get('Version', file = pkg) }/{ f }/{ slugify(children[[f]][[1]]) }"),
-      sections = map(children[[f]], ~ list(
-        name = .,
-        slug = slugify(.)
-      ))
+jekyll <- function(path = ".", dir = "docs", build = FALSE) {
+  if (!dir_exists(path)) {
+    stop(
+      "invalid `jekyll()` argument, `path` file path does not exist",
+      call. = FALSE
     )
-  ))))
-
-  layouts <- map(get_layouts(), layout)
-
-  if (dir_exists(base_dir)) {
-    file_delete(dir_ls(base_dir))
   }
-  dir_create(base_dir)
 
-  with_dir(base_dir, {
-    message("Writing pages")
-    walk(pages, write_out)
+  blocks <- parse_package(path)
 
-    message("Writing includes")
-    walk(get_includes(), ~ write_out(include(.)))
+  path_docs <- path(path, dir)
 
-    message("Writing templates")
-    walk(get_templates(), ~ write_out(template(.)))
+  if (dir_exists(path_docs)) {
+    dir_delete(path_docs)
+  }
 
-    message("Writing layouts")
-    walk(get_layouts(), ~ write_out(layout(.)))
+  dir_create(path_docs)
 
-    message("Writing scss")
-    dir_create("assets/css", recursive = TRUE)
-    dir_create("_sass")
-    cat0(
-      "---",
-      "---",
-      "",
-      map_chr(get_sass(), ~ glue("@import '{ sub('_', '', path_ext_remove(path_file(.)), fixed = TRUE) }';")),
-      sep = "\n",
-      file = path("assets", "css", "main", ext = "scss")
-    )
-    walk(get_sass(), ~ file_copy(., path("_sass", path_file(.))))
+  create_folders(path_docs, blocks)
+  create_files(path_docs, blocks)
+
+  if (!build) {
+    return(invisible(TRUE))
+  }
+
+  copy_includes(path_docs)
+  copy_layouts(path_docs)
+  copy_config(path_docs)
+
+  args <- c(
+    "build"
+  )
+
+  invisible(processx::run("jekyll", args, wd = path_docs))
+}
+
+create_folders <- function(path, blocks) {
+  walk(blocks, function(block) {
+    block[["family"]] %&&% dir_create(path(path, block[["family"]]))
   })
+}
 
-  invisible()
+create_files <- function(path, blocks) {
+  walk(blocks, function(block) {
+    block_file <- glue("{ tolower(block[['name']]) }.md")
+
+    block[["layout"]] <- "doc"
+
+    block_path <- block[["family"]] %&&%
+      file_create(path(path, block[["family"]], block_file)) %||%
+      file_create(path(path, block_file))
+
+    cat0(
+      file = block_path,
+      "---\n",
+      as_yaml(block),
+      "---\n"
+    )
+  })
+}
+
+copy_config <- function(path) {
+  file_copy(path(path_configs(), "default.yaml"), path(path, "_config.yaml"))
+}
+
+copy_layouts <- function(path) {
+  file_move(dir_copy(path_layouts(), path), path(path, "_layouts"))
+}
+
+copy_includes <- function(path) {
+  file_move(dir_copy(path_includes(), path), path(path, "_includes"))
+}
+
+path_configs <- function() {
+  system.file("jekyll", "configs", package = "hyderogen")
+}
+
+path_layouts <- function() {
+  system.file("jekyll", "layouts", package = "hyderogen")
+}
+
+path_includes <- function() {
+  system.file("jekyll", "includes", package = "hyderogen")
 }

@@ -2,32 +2,23 @@
 % Please edit documentation in R/jekyll.R
 \name{jekyll}
 \alias{jekyll}
-\title{Build a jekyll site}
+\title{Jekyll folder structure}
 \usage{
-jekyll(pkg = ".", dir = "docs")
+jekyll(path = ".", dir = "docs", build = FALSE)
 }
 \arguments{
-\item{pkg}{A character string specifying a file path to an R package,
-defaults to \code{"."}, the current directory.}
+\item{path}{A file path specifying the folder of a package, defaults to
+\code{"."}.}
 
-\item{dir}{A folder path, relative to \code{pkg}, where the jekyll site will be
-built, defaults to \code{"docs"}.}
+\item{dir}{A file path, relative to \code{path}, specifying the destination of the
+jekyll folders and files, defaults to \code{"docs/"}.}
+
+\item{build}{One of \code{TRUE} or \code{FALSE} specifying if the jekyll site is built
+after creating the folder structure, defaults to \code{FALSE}.}
 }
 \description{
-The \code{jekyll} function builds a jekyll site from your
-package's roxygen.
-}
-\details{
-Collections are currently overwritten. However, if a family's name is
-changed then the old, corresponding collection will not be deleted. This is
-to prevent custom collections from accidentally being removed. This behaviour
-is subject to change.
-}
-\examples{
-\dontrun{
-
-jekyll("~/git/mypkg")
-
-}
-
+Create a jekyll site structure from a package's roxygen. Optionally, a
+site may be built, too. Building your site requires
+\href{https://jekyllrb.com/docs/installation/}{jekyll} to be installed and
+available on your system.
 }
