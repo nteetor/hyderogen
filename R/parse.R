@@ -1,10 +1,19 @@
-#' @importFrom purrr map keep flatten_chr %@@%
+#' @importFrom purrr map keep flatten_chr accumulate %@@%
+#' @importFrom dplyr group_by summarise mutate case_when lag
+#' @importFrom sourcetools tokenize_string
 
 parse_package <- function(path = ".") {
   base_path <- normalizePath(path)
+  pkg_env <- pkgload::load_all(
+    path,
+    compile = FALSE,
+    helpers = FALSE,
+    attach_testthat = FALSE,
+    quiet = TRUE
+  )$env
 
   # create blocks
-  raw_blocks <- roxygen2::parse_package(base_path)
+  raw_blocks <- roxygen2::parse_package(base_path, env = NULL)
   options <- roxygen2:::load_options(base_path)
   blocks <- map(raw_blocks, roxygen2:::process_templates, base_path, options)
 
@@ -13,6 +22,7 @@ parse_package <- function(path = ".") {
   blocks <- normalize_sections(blocks)
   blocks <- normalize_rdnames(blocks)
   blocks <- normalize_names(blocks)
+  blocks <- parse_examples(blocks, pkg_env)
   blocks <- sort_names(blocks)
 
   blocks <- drop_empty(blocks)
@@ -111,6 +121,64 @@ normalize_names <- function(blocks) {
     if (is.null(block[["name"]])) {
       if (!is.null(block %@% "object")) {
         block[["name"]] <- (block %@% "object")[["alias"]]
+      }
+    }
+
+    block
+  })
+}
+
+parse_examples <- function(blocks, env) {
+  map(blocks, function(block) {
+    if (!is.null(block[["examples"]])) {
+      tokens <- tokenize_string(block[["examples"]])
+
+      if (!all(tokens$type == "whitespace")) {
+        block_env <- new.env(parent = env)
+
+        block[["examples"]] <- tokens %>%
+          group_by(row) %>%
+          summarise(
+            value = glue_collapse(value),
+            type = if (length(type) > 1) "code" else type
+          ) %>%
+          mutate(
+            type = case_when(
+              type == "comment" ~ "comment",
+              type == "whitespace" & value == "\\n\\n" ~ "whitespace",
+              TRUE ~ "code"
+            ),
+            type2 = lag(type, default = type[1]),
+            inc = as.double(type != type2),
+            order = accumulate(inc, `+`)
+          ) %>%
+          group_by(order) %>%
+          summarise(
+            value = glue_collapse(value),
+            value = gsub("\n#", "", value, fixed = TRUE),
+            value = gsub("\\n\\s*$", "", value),
+            value = gsub("^(#\\s*|\\n)", "", value),
+            value = gsub("\\\\%", "%", value),
+            type = unique(type)
+          ) %>%
+          .[-1, ] %>%
+          mutate(
+            order = accumulate(type == "comment", `+`)
+          ) %>%
+          group_by(order) %>%
+          summarise(
+            sections = list(list(
+              title = value[1],
+              body = length(value[-1]) %&&%
+                map(value[-1], function(example) {
+                  list(
+                    code = example,
+                    # need to evaluate with the target package loaded
+                    output = eval(parse(text = example), envir = block_env)
+                  )
+                })
+            ))
+          )
       }
     }
 

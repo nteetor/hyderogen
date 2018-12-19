@@ -1,5 +1,5 @@
 #' @importFrom fs path path_package dir_exists dir_delete dir_create dir_ls
-#'   dir_copy file_create file_exists file_copy file_move
+#'                dir_copy file_create file_exists file_copy file_move
 #' @importFrom glue glue glue_collapse double_quote
 #' @importFrom purrr walk %||%
 NULL

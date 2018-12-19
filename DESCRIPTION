@@ -13,10 +13,12 @@ RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE)
 Imports:
     roxygen2,
-    purrr,
     fs,
+    processx,
+    sourcetools,
+    pkgload (>= 1.0.2),
+    dplyr,
+    purrr,
     glue,
     desc,
-    yaml,
-    processx
-    
+    yaml
