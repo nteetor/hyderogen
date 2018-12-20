@@ -121,6 +121,8 @@ normalize_names <- function(blocks) {
     if (is.null(block[["name"]])) {
       if (!is.null(block %@% "object")) {
         block[["name"]] <- (block %@% "object")[["alias"]]
+      } else if (!is.null(block %@% "call")) {
+        block[["name"]] <- as.character((block %@% "call")[[2]])
       }
     }
 
@@ -136,49 +138,57 @@ parse_examples <- function(blocks, env) {
       if (!all(tokens$type == "whitespace")) {
         block_env <- new.env(parent = env)
 
-        block[["examples"]] <- tokens %>%
-          group_by(row) %>%
-          summarise(
-            value = glue_collapse(value),
-            type = if (length(type) > 1) "code" else type
-          ) %>%
-          mutate(
-            type = case_when(
-              type == "comment" ~ "comment",
-              type == "whitespace" & value == "\\n\\n" ~ "whitespace",
-              TRUE ~ "code"
-            ),
-            type2 = lag(type, default = type[1]),
-            inc = as.double(type != type2),
-            order = accumulate(inc, `+`)
-          ) %>%
-          group_by(order) %>%
-          summarise(
-            value = glue_collapse(value),
-            value = gsub("\n#", "", value, fixed = TRUE),
-            value = gsub("\\n\\s*$", "", value),
-            value = gsub("^(#\\s*|\\n)", "", value),
-            value = gsub("\\\\%", "%", value),
-            type = unique(type)
-          ) %>%
-          .[-1, ] %>%
-          mutate(
-            order = accumulate(type == "comment", `+`)
-          ) %>%
-          group_by(order) %>%
-          summarise(
-            sections = list(list(
-              title = value[1],
-              body = length(value[-1]) %&&%
-                map(value[-1], function(example) {
-                  list(
-                    code = example,
-                    # need to evaluate with the target package loaded
-                    output = eval(parse(text = example), envir = block_env)
+        tokens_typed <- summarise(
+          group_by(tokens, row),
+          value = glue_collapse(value),
+          type = if (length(type) > 1) "code" else type
+        )
+
+        tokens_reworked <- mutate(
+          tokens_typed,
+          type = case_when(
+            type == "comment" ~ "comment",
+            type == "whitespace" & value == "\\n\\n" ~ "whitespace",
+            TRUE ~ "code"
+          ),
+          type2 = lag(type, default = type[1]),
+          inc = as.double(type != type2),
+          order = accumulate(inc, `+`)
+        )
+
+        tokens_cleaned <- summarise(
+          group_by(tokens_reworked, order),
+          value = glue_collapse(value),
+          value = gsub("\n#", "", value, fixed = TRUE),
+          value = gsub("\\n\\s*$", "", value),
+          value = gsub("^(#\\s*|\\n)", "", value),
+          value = gsub("\\\\%", "%", value),
+          type = unique(type)
+        )[-1, ]
+
+        tokens_reorder <- mutate(
+          tokens_cleaned,
+          order = accumulate(type == "comment", `+`)
+        )
+
+        tokens_examples <- summarise(
+          group_by(tokens_reorder, order),
+          sections = list(list(
+            title = value[1],
+            body = length(value[-1]) %&&%
+              map(value[-1], function(example) {
+                list(
+                  code = example,
+                  # need to evaluate with the target package loaded
+                  output = as.character(
+                    eval(parse(text = example), envir = block_env)
                   )
-                })
-            ))
-          )
+                )
+              })
+          ))
+        )
+
+        block[["examples"]] <- tokens_examples[["sections"]]
       }
     }
 
@@ -188,6 +198,10 @@ parse_examples <- function(blocks, env) {
 
 sort_names <- function(blocks) {
   map(blocks, function(block) {
+    if (!("name" %in% names(block))) {
+      return(block)
+    }
+
     # reorder block pieces
     block_attrs <- attributes(block)
     block_names <- names(block)
@@ -202,7 +216,5 @@ sort_names <- function(blocks) {
 }
 
 drop_empty <- function(blocks) {
-  keep(blocks, function(block) {
-    !is.null(block[["name"]]) || !is.null(block %@% "object")
-  })
+  keep(blocks, function(block) !is.null(block[["name"]]))
 }
