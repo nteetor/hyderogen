@@ -5,7 +5,28 @@
   {% include head.html %}
   <body>
     <div class="container-fluid">
-      {{ content }}
+      <div class="row">
+        <style>
+          .sidebar, .content {
+          height: 100vh;
+          overflow-y: scroll;
+          }
+        </style>
+        <div class="sidebar col col-auto">
+          {% include sidebar.html %}
+        </div>
+        <div class="content col">
+          {{ content }}
+          <div class="d-flex justify-content-center">
+            <a class="text-muted p-3"
+               href="https://github.com/nteetor"
+               >github</a>
+            <a class="text-muted p-3"
+               href="https://twitter.com/ntweetor"
+               >twitter</a>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>

@@ -1,5 +1,6 @@
-#' @importFrom fs path path_package dir_exists dir_delete dir_create dir_ls
-#'                dir_copy file_create file_exists file_copy file_move
+#' @importFrom fs path path_package path_file path_ext_remove dir_exists
+#'   dir_delete dir_create dir_ls dir_copy dir_walk dir_map file_create
+#'   file_exists file_copy file_move file_delete
 #' @importFrom glue glue glue_collapse double_quote
 #' @importFrom purrr walk %||%
 NULL
@@ -34,10 +35,10 @@ jekyll <- function(path = ".", dir = "docs", build = FALSE) {
   path_docs <- path(path, dir)
 
   if (dir_exists(path_docs)) {
-    dir_delete(path_docs)
+    dir_walk(path_docs, file_delete)
+  } else {
+    dir_create(path_docs)
   }
-
-  dir_create(path_docs)
 
   create_folders(path_docs, blocks)
   create_files(path_docs, blocks)
@@ -48,6 +49,8 @@ jekyll <- function(path = ".", dir = "docs", build = FALSE) {
 
   copy_includes(path_docs)
   copy_layouts(path_docs)
+  copy_plugins(path_docs)
+  copy_sass(path_docs)
   copy_config(path_docs)
 
   args <- c(
@@ -83,25 +86,38 @@ create_files <- function(path, blocks) {
 }
 
 copy_config <- function(path) {
-  file_copy(path(path_configs(), "default.yaml"), path(path, "_config.yaml"))
+  file_copy(path_jekyll("configs/default.yaml"), path(path, "_config.yaml"))
 }
 
 copy_layouts <- function(path) {
-  file_move(dir_copy(path_layouts(), path), path(path, "_layouts"))
+  file_move(dir_copy(path_jekyll("layouts"), path), path(path, "_layouts"))
 }
 
 copy_includes <- function(path) {
-  file_move(dir_copy(path_includes(), path), path(path, "_includes"))
+  file_move(dir_copy(path_jekyll("includes"), path), path(path, "_includes"))
 }
 
-path_configs <- function() {
-  system.file("jekyll", "configs", package = "hyderogen")
+copy_plugins <- function(path) {
+  file_move(dir_copy(path_jekyll("plugins"), path), path(path, "_plugins"))
 }
 
-path_layouts <- function() {
-  system.file("jekyll", "layouts", package = "hyderogen")
+copy_sass <- function(path) {
+  file_move(dir_copy(path_jekyll("sass"), path), path(path, "_sass"))
+
+  dir_create(path(path, "css"))
+  file_create(path(path, "css", "main.scss"))
+
+  sass_files <- dir_map(path_jekyll("sass"), path_file)
+  sass_imports <- glue("@import \"{ path_ext_remove(sass_files) }\";")
+  cat(
+    file = path(path, "css", "main.scss"),
+    sep = "\n",
+    "---",
+    "---",
+    sass_imports
+  )
 }
 
-path_includes <- function() {
-  system.file("jekyll", "includes", package = "hyderogen")
+path_jekyll <- function(path) {
+  system.file("jekyll", path, package = "hyderogen")
 }
