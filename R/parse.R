@@ -126,6 +126,7 @@ normalize_names <- function(blocks) {
       }
     }
 
+    block[["rdname"]] <- block[["name"]]
     block
   })
 }
