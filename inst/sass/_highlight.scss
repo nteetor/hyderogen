@@ -7,7 +7,13 @@
 .highlight .cm { color: #837d7a } /* Comment.Multiline */
 .highlight .cp { color: #837d7a } /* Comment.Preproc */
 .highlight .cpf { color: #837d7a } /* Comment.PreprocFile */
-.highlight .c1 { color: #837d7a } /* Comment.Single */
+.highlight .c1 { /* Comment.Single */
+  color: #837d7a;
+  background-color: #FF00001A;
+  border-radius: 10%;
+  padding-right: 3px;
+  padding-left: 3px;
+}
 .highlight .cs { color: #837d7a } /* Comment.Special */
 .highlight .kc { color: #d7ae38; font-weight: bold } /* Keyword.Constant */
 .highlight .kd { color: #d7ae38; font-weight: bold } /* Keyword.Declaration */

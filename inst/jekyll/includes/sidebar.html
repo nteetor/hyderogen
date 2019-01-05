@@ -3,6 +3,11 @@
     {% assign this = page %}
     {% assign families = site.pages | group_by: "dir" %}
     {% for family in families %}
+
+    {% if family.name == "/assets/css/" %}
+    {% continue %}
+    {% endif %}
+
     <dt {% if this.dir == family.items.first.dir and forloop.first != true %}
         class = "mt-3"
         {% endif %}>

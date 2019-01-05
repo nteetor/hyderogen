@@ -1,5 +1,5 @@
-#' @importFrom purrr map keep flatten_chr accumulate %@@%
-#' @importFrom dplyr group_by summarise mutate case_when lag
+#' @importFrom purrr map map_if map2 map_chr keep flatten_chr accumulate %@@%
+#' @importFrom dplyr group_by summarise mutate filter lag
 #' @importFrom sourcetools tokenize_string
 
 parse_package <- function(path = ".") {
@@ -22,10 +22,11 @@ parse_package <- function(path = ".") {
   blocks <- normalize_sections(blocks)
   blocks <- normalize_rdnames(blocks)
   blocks <- normalize_names(blocks)
-  blocks <- parse_examples(blocks, pkg_env)
-  blocks <- sort_names(blocks)
 
   blocks <- drop_empty(blocks)
+  blocks <- normalize_links(blocks)
+  blocks <- parse_examples(blocks, pkg_env)
+  blocks <- sort_names(blocks)
 
   blocks
 }
@@ -131,65 +132,142 @@ normalize_names <- function(blocks) {
   })
 }
 
+normalize_links <- function(blocks) {
+  families <- map(blocks, "family")
+  names(families) <- map_chr(blocks, "rdname")
+  families <- keep(families, ~ length(.) || nchar(.))
+  families <- map_if(families, ~ . != "", ~ paste0(., "/"))
+
+  map(blocks, function(block) {
+    block[["parameters"]] <- map(
+      block[["parameters"]],
+      function(param) {
+        param[["description"]] <- replace_links(param[["description"]], families)
+        param
+      }
+    )
+
+    block[["sections"]] <- map(
+      block[["sections"]],
+      function(section) {
+        section[["body"]] <- replace_links(section[["body"]], families)
+        section
+      }
+    )
+
+    block[["examples"]] <- replace_links(block[["examples"]], families)
+
+    block
+  })
+}
+
+replace_links <- function(x, families) {
+  if (!length(x) || !grepl("[^[]\\[[^]]+\\]", x)) {
+    return(x)
+  }
+
+  x <- stringr::str_replace_all(
+    x,
+    "([^\\[])\\[([a-zA-Z][a-zA-Z0-9]*)\\]",
+    '\\1[\\2](/{{ families[["\\2"]] %||% "" }}\\2.html)'
+  )
+
+  x <- stringr::str_replace_all(
+    x,
+    "([^\\[])\\[([a-zA-Z][a-zA-Z0-9]*)\\(\\)\\]",
+    '\\1[\\2()](/{{ families[["\\2"]] %||% "" }}\\2.html)'
+  )
+
+  glue(x, .open = "{{", .close = "}}")
+}
+
+clean_rd_comments <- function(x) {
+  gsub("(^|\\n)\\\\%", "\\1#.", x)
+}
+
 parse_examples <- function(blocks, env) {
   map(blocks, function(block) {
     if (!is.null(block[["examples"]])) {
-      tokens <- tokenize_string(block[["examples"]])
+      tokens <- tokenize_string(clean_rd_comments(block[["examples"]]))
 
       if (!all(tokens$type == "whitespace")) {
         block_env <- new.env(parent = env)
 
-        tokens_typed <- summarise(
+        tokens_by_row <- summarise(
           group_by(tokens, row),
           value = glue_collapse(value),
-          type = if (length(type) > 1) "code" else type
+          type = list(unique(type))
         )
 
-        tokens_reworked <- mutate(
-          tokens_typed,
-          type = case_when(
-            type == "comment" ~ "comment",
-            type == "whitespace" & value == "\\n\\n" ~ "whitespace",
-            TRUE ~ "code"
-          ),
-          type2 = lag(type, default = type[1]),
-          inc = as.double(type != type2),
-          order = accumulate(inc, `+`)
+        tokens_simple_types <- mutate(
+          tokens_by_row,
+          type = purrr::map2_chr(type, value, ~ {
+            if (length(.x) > 1)
+              "code"
+            else if (.x == "bracket")
+              "code"
+            else if (grepl("^[#]{2,}", .y))
+              "title"
+            else if (grepl("^[#][.]", .y))
+              "literal"
+            else
+              .x
+          })
         )
 
-        tokens_cleaned <- summarise(
-          group_by(tokens_reworked, order),
-          value = glue_collapse(value),
-          value = gsub("\n#", "", value, fixed = TRUE),
-          value = gsub("\\n\\s*$", "", value),
-          value = gsub("^(#\\s*|\\n)", "", value),
-          value = gsub("\\\\%", "%", value),
-          type = unique(type)
-        )[-1, ]
-
-        tokens_reorder <- mutate(
-          tokens_cleaned,
-          order = accumulate(type == "comment", `+`)
+        tokens_indexed_types <- mutate(
+          tokens_simple_types,
+          index = accumulate(lag(type, 1, "") != type, `+`)
         )
 
-        tokens_examples <- summarise(
-          group_by(tokens_reorder, order),
-          sections = list(list(
-            title = value[1],
-            body = length(value[-1]) %&&%
-              map(value[-1], function(example) {
-                list(
-                  code = example,
-                  # need to evaluate with the target package loaded
-                  output = as.character(
-                    eval(parse(text = example), envir = block_env)
-                  )
-                )
-              })
-          ))
+        tokens_collapse_types <- summarise(
+          group_by(tokens_indexed_types, index),
+          type = type[1],
+          value = glue_collapse(value)
         )
 
-        block[["examples"]] <- tokens_examples[["sections"]]
+        tokens_by_section <- mutate(
+          filter(tokens_collapse_types, type != "whitespace"),
+          section = accumulate(type == "title", `+`),
+          index = NULL
+        )
+
+        tokens_clean_values <- mutate(
+          tokens_by_section,
+          value = sub("\n+$", "", value),
+          value = gsub("(^[#]+[.]?\\s|\\n[#][.]?)", "", value),
+          value = gsub("\\\\%", "%", value)
+        )
+
+        tokens_sectioned <- summarise(
+          group_by(tokens_clean_values, section),
+          title = value[type == "title"],
+          body = list(
+            map2(value[type != "title"], type[type != "title"], function(value, type) {
+              list(
+                type = if (type %in% c("code", "literal")) type else "text",
+                content = if (type == "literal")
+                  glue(value, .open = "{{", .close = "}}")
+                else
+                  value,
+                output = if (type == "code") {
+                  as.character(eval(parse(text = value), envir = block_env))
+                }
+              )
+            })
+          )
+        )
+
+        block[["examples"]] <- purrr::pmap(
+          tokens_sectioned,
+          function(section, title, body) {
+            list(
+              title = title,
+              body = body
+            )
+          }
+        )
+
       }
     }
 

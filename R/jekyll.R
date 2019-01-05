@@ -1,6 +1,6 @@
-#' @importFrom fs path path_package path_file path_ext_remove dir_exists
-#'   dir_delete dir_create dir_ls dir_copy dir_walk dir_map file_create
-#'   file_exists file_copy file_move file_delete
+#' @importFrom fs path path_package path_file path_ext path_ext_remove
+#'   dir_exists dir_delete dir_create path_rel dir_ls dir_copy dir_walk dir_map
+#'   file_create file_exists file_copy file_move file_delete
 #' @importFrom glue glue glue_collapse double_quote
 #' @importFrom purrr walk %||%
 NULL
@@ -21,8 +21,13 @@ NULL
 #' @param build One of `TRUE` or `FALSE` specifying if the jekyll site is built
 #'   after creating the folder structure, defaults to `FALSE`.
 #'
+#' @param assets A character vector specifying file paths of assets to include
+#'   in the jekyll assets folder. Javascript files are sorted into `assets/js/`,
+#'   CSS files are sorted into `assets/css`, and all other files are put directly
+#'   into `assets/`.
+#'
 #' @export
-jekyll <- function(path = ".", dir = "docs", build = FALSE) {
+jekyll <- function(path = ".", dir = "docs", build = FALSE, assets = NULL) {
   if (!dir_exists(path)) {
     stop(
       "invalid `jekyll()` argument, `path` file path does not exist",
@@ -47,11 +52,11 @@ jekyll <- function(path = ".", dir = "docs", build = FALSE) {
     return(invisible(TRUE))
   }
 
+  copy_config(path_docs)
   copy_includes(path_docs)
   copy_layouts(path_docs)
   copy_plugins(path_docs)
-  copy_sass(path_docs)
-  copy_config(path_docs)
+  copy_assets(path_docs, assets)
 
   args <- c(
     "build"
@@ -85,7 +90,7 @@ create_files <- function(path, blocks) {
   })
 }
 
-copy_config <- function(path) {
+copy_config <- function(path, assets) {
   file_copy(path_jekyll("configs/default.yaml"), path(path, "_config.yaml"))
 }
 
@@ -101,21 +106,61 @@ copy_plugins <- function(path) {
   file_move(dir_copy(path_jekyll("plugins"), path), path(path, "_plugins"))
 }
 
-copy_sass <- function(path) {
+copy_assets <- function(path, extras = NULL) {
+  dir_assets <- dir_create(path(path, "assets"))
+
+  # sass
   file_move(dir_copy(path_jekyll("sass"), path), path(path, "_sass"))
 
-  dir_create(path(path, "css"))
-  file_create(path(path, "css", "main.scss"))
+  dir_css <- dir_create(path(dir_assets, "css"))
+  path_main_css <- file_create(path(dir_css, "main.scss"))
 
   sass_files <- dir_map(path_jekyll("sass"), path_file)
   sass_imports <- glue("@import \"{ path_ext_remove(sass_files) }\";")
   cat(
-    file = path(path, "css", "main.scss"),
+    file = path_main_css,
     sep = "\n",
     "---",
     "---",
     sass_imports
   )
+
+  # js
+  dir_js <- dir_create(path(dir_assets, "js"))
+
+  # extras
+  path_extras <- map(extras, function(path_extra) {
+    if (path_ext(path_extra) == "css") {
+      file_copy(path_extra, dir_css)
+    } else if (path_ext(path_extra) == "js") {
+      file_copy(path_extra, dir_js)
+    } else {
+      file_copy(path_file(path_extra), dir_assets)
+    }
+  })
+
+  if (length(path_extras) > 0) {
+    path_extras <- map(path_extras, function(p) {
+      list(
+        ext = path_ext(p),
+        path = paste0("/", path_rel(p, path))
+      )
+    })
+
+    cat(
+      file = path(path, "_config.yaml"),
+      sep = "\n",
+      append = TRUE,
+      "",
+      as_yaml(
+        list(
+          hyderogen = list(
+            assets = path_extras
+          )
+        )
+      )
+    )
+  }
 }
 
 path_jekyll <- function(path) {

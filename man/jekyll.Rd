@@ -4,7 +4,7 @@
 \alias{jekyll}
 \title{Jekyll folder structure}
 \usage{
-jekyll(path = ".", dir = "docs", build = FALSE)
+jekyll(path = ".", dir = "docs", build = FALSE, assets = NULL)
 }
 \arguments{
 \item{path}{A file path specifying the folder of a package, defaults to
@@ -15,6 +15,11 @@ jekyll folders and files, defaults to \code{"docs/"}.}
 
 \item{build}{One of \code{TRUE} or \code{FALSE} specifying if the jekyll site is built
 after creating the folder structure, defaults to \code{FALSE}.}
+
+\item{assets}{A character vector specifying file paths of assets to include
+in the jekyll assets folder. Javascript files are sorted into \code{assets/js/},
+CSS files are sorted into \code{assets/css}, and all other files are put directly
+into \code{assets/}.}
 }
 \description{
 Create a jekyll site structure from a package's roxygen. Optionally, a
