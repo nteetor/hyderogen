@@ -173,13 +173,13 @@ replace_links <- function(x, families) {
   x <- stringr::str_replace_all(
     x,
     "([^\\[])\\[([a-zA-Z][a-zA-Z0-9]*)\\]",
-    '\\1[\\2](/{{ families[["\\2"]] %||% "" }}\\2.html)'
+    '\\1[\\2]({{ families[["\\2"]] %||% "" }}{{ tolower("\\2") }}.html)'
   )
 
   x <- stringr::str_replace_all(
     x,
     "([^\\[])\\[([a-zA-Z][a-zA-Z0-9]*)\\(\\)\\]",
-    '\\1[\\2()](/{{ families[["\\2"]] %||% "" }}\\2.html)'
+    '\\1[\\2()]({{ families[["\\2"]] %||% "" }}{{ tolower("\\2") }}.html)'
   )
 
   glue(x, .open = "{{", .close = "}}")
