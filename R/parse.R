@@ -123,7 +123,11 @@ normalize_names <- function(blocks) {
       if (!is.null(block %@% "object")) {
         block[["name"]] <- (block %@% "object")[["alias"]]
       } else if (!is.null(block %@% "call")) {
-        block[["name"]] <- as.character((block %@% "call")[[2]])
+        if (length(block %@% "call") == 1) {
+          block[["name"]] <- as.character(block %@% "call")
+        } else {
+          block[["name"]] <- as.character((block %@% "call")[[2]])
+        }
       }
     }
 
