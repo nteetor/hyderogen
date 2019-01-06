@@ -58,6 +58,10 @@ jekyll <- function(path = ".", dir = "docs", build = FALSE, assets = NULL) {
   # copy_plugins(path_docs)
   copy_assets(path_docs, assets)
 
+  path_config <- path(path_docs, "_config.yaml")
+  pkg_name <- path_file(fs::path_real(path))
+  config_baseurl(path_config, pkg_name)
+
   args <- c(
     "build"
   )
@@ -161,6 +165,16 @@ copy_assets <- function(path, extras = NULL) {
       )
     )
   }
+}
+
+config_baseurl <- function(path_config, package) {
+  config <- sourcetools::read_lines(path_config)
+  config <- sub('^baseurl: ""', glue("baseurl: /{ package }"), config)
+  cat(
+    file = path_config,
+    sep = "\n",
+    config
+  )
 }
 
 path_jekyll <- function(path) {
