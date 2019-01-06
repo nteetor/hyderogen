@@ -9,3 +9,11 @@ cat0 <- function(..., sep = "") {
     NULL
   }
 }
+
+block_path_file <- function(block) {
+  if (!is.null(block %@% "call") && block %@% "call" == "_PACKAGE") {
+    "index"
+  } else {
+    tolower(block[["name"]])
+  }
+}
