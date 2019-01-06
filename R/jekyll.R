@@ -55,7 +55,7 @@ jekyll <- function(path = ".", dir = "docs", build = FALSE, assets = NULL) {
   copy_config(path_docs)
   copy_includes(path_docs)
   copy_layouts(path_docs)
-  copy_plugins(path_docs)
+  # copy_plugins(path_docs)
   copy_assets(path_docs, assets)
 
   args <- c(
@@ -73,7 +73,7 @@ create_folders <- function(path, blocks) {
 
 create_files <- function(path, blocks) {
   walk(blocks, function(block) {
-    block_file <- glue("{ tolower(block[['name']]) }.md")
+    block_file <- glue("{ block_path_file(block) }.md")
 
     block[["layout"]] <- "doc"
 

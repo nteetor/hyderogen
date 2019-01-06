@@ -13,7 +13,7 @@
         {% endif %}>
       <a class="text-dark"
          href="{{ family.items.first.url }}"
-         >{{ family.name | url_decode | replace_regex: '/', '' | capitalize }}</a>
+         >{{ family.name | url_decode | replace: '/', '' | capitalize }}</a>
     </dt>
     {% if this.dir == family.items.first.dir %}
     {% for item in family.items %}
