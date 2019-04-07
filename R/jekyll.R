@@ -27,7 +27,7 @@ NULL
 #'   into `assets/`.
 #'
 #' @export
-jekyll <- function(path = ".", dir = "docs", build = FALSE, assets = NULL) {
+jekyll <- function(path = ".", dir = "docs", build = TRUE, assets = NULL) {
   if (!dir_exists(path)) {
     stop(
       "invalid `jekyll()` argument, `path` file path does not exist",
@@ -132,14 +132,19 @@ copy_assets <- function(path, extras = NULL) {
   # js
   dir_js <- dir_create(path(dir_assets, "js"))
 
+  # img
+  dir_img <- dir_create(path(dir_assets, "img"))
+
   # extras
   path_extras <- map(extras, function(path_extra) {
     if (path_ext(path_extra) == "css") {
       file_copy(path_extra, dir_css)
     } else if (path_ext(path_extra) == "js") {
       file_copy(path_extra, dir_js)
+    } else if (grepl("^image", mime::guess_type(path_extra))) {
+      file_copy(path_extra, dir_img)
     } else {
-      file_copy(path_file(path_extra), dir_assets)
+      file_copy(path_extra, dir_assets)
     }
   })
 

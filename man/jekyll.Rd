@@ -4,7 +4,7 @@
 \alias{jekyll}
 \title{Jekyll folder structure}
 \usage{
-jekyll(path = ".", dir = "docs", build = FALSE, assets = NULL)
+jekyll(path = ".", dir = "docs", build = TRUE, assets = NULL)
 }
 \arguments{
 \item{path}{A file path specifying the folder of a package, defaults to

@@ -139,7 +139,7 @@ normalize_names <- function(blocks) {
 normalize_links <- function(blocks) {
   families <- map(blocks, "family")
   names(families) <- map_chr(blocks, "rdname")
-  families <- keep(families, ~ length(.) || nchar(.))
+  families <- keep(families, ~ length(.) && nchar(.))
   families <- map_if(families, ~ . != "", ~ paste0(., "/"))
 
   map(blocks, function(block) {

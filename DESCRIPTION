@@ -21,4 +21,5 @@ Imports:
     purrr,
     stringr,
     glue,
-    yaml
+    yaml,
+    mime
