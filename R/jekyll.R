@@ -1,5 +1,5 @@
 #' @importFrom fs path path_package path_file path_ext path_ext_remove
-#'   dir_exists dir_delete dir_create path_rel dir_ls dir_copy dir_walk dir_map
+#'   dir_exists dir_delete dir_create path_rel dir_ls dir_copy dir_walk
 #'   file_create file_exists file_copy file_move file_delete
 #' @importFrom glue glue glue_collapse double_quote
 #' @importFrom purrr walk %||%
@@ -119,8 +119,9 @@ copy_assets <- function(path, extras = NULL) {
   dir_css <- dir_create(path(dir_assets, "css"))
   path_main_css <- file_create(path(dir_css, "main.scss"))
 
-  sass_files <- dir_map(path_jekyll("sass"), path_file)
-  sass_imports <- glue("@import \"{ path_ext_remove(sass_files) }\";")
+  sass_files <- path_ext_remove(path_file(dir_ls(path_jekyll("sass"))))
+  sass_imports <- glue("@import \"{ sass_files }\";")
+
   cat(
     file = path_main_css,
     sep = "\n",
